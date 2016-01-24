@@ -17,14 +17,32 @@ Entity.prototype.update = function() {
 Entity.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 }
+var pInputEngine = function() {
+    this.bindings = {};
+    this.actions = {};
+
+// TODO: Option to customize inputkeys
+    this.setupKeys();
+        
+};
+
+pInputEngine.prototype.setupKeys = function() {
+    this.bindings[87] = 'move-up';
+    this.bindings[83] = 'move-down';
+    this.bindings[65] = 'move-left';
+    this.bindings[68] = 'move-right';
+};
 
 // Player to control
 var Player = function() {
+    this.inputEngine = new pInputEngine();
+
     x = 100;
     y = 200;
 
     Entity.call(this, x, y, 'images/char-boy.png');
 };
+
 
 Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Player;
@@ -47,6 +65,19 @@ var Enemy = function() {
     Entity.call(this, x, y, sprite);
 };
 
+Player.prototype.update = function() {
+    /*
+    if(this.keyState[87]) this.y -= 5;
+    if(this.keyState[83]) this.y += 5;
+    if(this.keyState[65]) this.x -= 5;
+    if(this.keyState[68]) this.x += 5;
+    */
+    if(this.inputEngine.actions['move-up']) this.y -= 5;
+    if(this.inputEngine.actions['move-down']) this.y += 5;
+    if(this.inputEngine.actions['move-left']) this.x -= 5;
+    if(this.inputEngine.actions['move-right']) this.x += 5;
+};
+
 Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
 
@@ -64,16 +95,17 @@ var allEnemies = [e1,e2];
 // Place the player object in a variable called player
 
 
+var onKeyUp = function (event) {
+    player.inputEngine.actions[player.inputEngine.bindings[event.keyCode]] = false;
+};
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
-document.addEventListener('keyup', function(e) {
-    var allowedKeys = {
-        37: 'left',
-        38: 'up',
-        39: 'right',
-        40: 'down'
-    };
+var onKeyDown = function (event) {
+    player.inputEngine.actions[player.inputEngine.bindings[event.keyCode]] = true;
+}
 
-    player.handleInput(allowedKeys[e.keyCode]);
-});
+document.addEventListener('keyup', onKeyUp);
+document.addEventListener('keydown', onKeyDown);
+
+
+
+
