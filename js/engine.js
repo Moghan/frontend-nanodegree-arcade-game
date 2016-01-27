@@ -80,8 +80,26 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
+        checkCollisions();
     }
+
+    function checkCollisions() {
+        // Axis-Aligned Bounding Box
+        box_player = player.hitbox();
+        allEnemies.forEach(function(enemy) {
+            box_enemy = enemy.hitbox();
+            if ((box_player.x < box_enemy.x + enemy.width) && 
+                (box_enemy.x < box_player.x + player.width) &&
+                (box_player.y < box_enemy.y + enemy.height) &&
+                (box_enemy.y < box_player.y + player.height)) {
+                // Collision detected
+                //console.log('Collision detected');
+            }                
+        });
+        
+    }
+
+
 
     /* This is called by the update function and loops through all of the
      * objects within your allEnemies array as defined in app.js and calls
@@ -94,7 +112,7 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy.update(dt);
         });
-        player.update();
+        player.update(dt);
     }
 
     /* This function initially draws the "game level", it will then call

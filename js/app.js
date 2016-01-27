@@ -6,7 +6,7 @@ var Entity = function (x, y, sprite) {
 
 // Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
-Entity.prototype.update = function() {
+Entity.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
@@ -36,6 +36,13 @@ pInputEngine.prototype.bindKey = function(key, action) {
 // Player to control
 var Player = function(x, y) {
     Entity.call(this, x, y, 'images/char-boy.png');
+    
+    this.width = 70;
+    this.height = 95;
+
+    this.type = 'player';
+
+// Sound test
     var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
     snd.play();
 };
@@ -44,6 +51,13 @@ var Player = function(x, y) {
 Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Player;
 
+Player.prototype.hitbox = function() {
+    // modified location of player due to whitespace in image
+    var loc = {x:0, y:0};
+    loc.x = this.x + 14;
+    loc.y = this.y + 46;
+    return loc;
+};
 
 // Enemies our player must avoid
 var Enemy = function(x, y) {
@@ -54,21 +68,43 @@ var Enemy = function(x, y) {
     // a helper we've provided to easily load images
     
     sprite = 'images/enemy-bug.png';
-    
-
     Entity.call(this, x, y, sprite);
+
+    this.width = 101;
+    this.height = 72;
+
+    this.type = 'enemy';
 };
 
-Player.prototype.update = function() {
-    if(inputEngine.actions['move-up']) this.y -= 5;
-    if(inputEngine.actions['move-down']) this.y += 5;
-    if(inputEngine.actions['move-left']) this.x -= 5;
-    if(inputEngine.actions['move-right']) this.x += 5;
+
+
+Player.prototype.update = function(dt) {
+    if(inputEngine.actions['move-up']) this.y -= (100 * dt);
+    if(inputEngine.actions['move-down']) this.y += (100 * dt);
+    if(inputEngine.actions['move-left']) this.x -= (100 * dt);
+    if(inputEngine.actions['move-right']) this.x += (100 * dt);
 };
 
 Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
 
+Enemy.prototype.hitbox = function () {
+    //TODO: Remove whitespace in pictures, or find some other solution!
+    // modified location of enemy due to whitespace in image
+    var loc = {x:0, y:0};
+    loc.x = this.x + 0;
+    loc.y = this.y + 75;
+    return loc;
+};
+
+Player.prototype.hitbox = function() {
+    //TODO: Remove whitespace in pictures, or find some other solution!
+    // modified location of player due to whitespace in image
+    var loc = {x:0, y:0};
+    loc.x = this.x + 14;
+    loc.y = this.y + 46;
+    return loc;
+};
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
