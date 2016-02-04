@@ -22,11 +22,18 @@ var pInputEngine = function() {
     this.bindings = {};
     this.actions = {};
 
+// Setup actions
+    this.actions['reset'] = false;
+    this.actions['pause'] = false;
+
 // TODO: Option to customize inputkeys
     this.bindKey(87, 'move-up');
     this.bindKey(83, 'move-down');
     this.bindKey(65, 'move-left');
-    this.bindKey(68, 'move-right');        
+    this.bindKey(68, 'move-right');
+    this.bindKey(80, 'pause');   
+
+         
 };
 
 pInputEngine.prototype.bindKey = function(key, action) {
@@ -43,8 +50,8 @@ var Player = function(x, y) {
     this.type = 'player';
 
 // Sound test
-    var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
-    snd.play();
+    //var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
+    //snd.play();
 };
 
 
@@ -124,11 +131,23 @@ inputEngine = new pInputEngine();
 
 
 var onKeyUp = function (event) {
-    inputEngine.actions[inputEngine.bindings[event.keyCode]] = false;
+    if(inputEngine.bindings[event.keyCode] === 'pause') {
+        //console.log(inputEngine.actions['pause']);
+        inputEngine.actions['pause'] = inputEngine.actions['pause'] === false ? true : false;
+        //console.log(inputEngine.actions['pause']);
+    }
+    else {
+        inputEngine.actions[inputEngine.bindings[event.keyCode]] = false;
+    }
 };
 
 var onKeyDown = function (event) {
-    inputEngine.actions[inputEngine.bindings[event.keyCode]] = true;
+    //TODO: A better solution to filter out the keys not reacted to when pressed down.
+    if(inputEngine.bindings[event.keyCode] === 'pause');
+    else {
+        inputEngine.actions[inputEngine.bindings[event.keyCode]] = true;
+    }
+    
 };
 
 document.addEventListener('keyup', onKeyUp);

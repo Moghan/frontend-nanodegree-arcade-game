@@ -79,8 +79,11 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        updateEntities(dt);
-        checkCollisions();
+        if( !inputEngine.actions['pause']) {
+            updateEntities(dt);
+            checkCollisions();
+        }
+        
     }
 
     function checkCollisions() {
