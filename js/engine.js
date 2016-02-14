@@ -29,7 +29,7 @@ var Engine = (function(global) {
     canvas.height = 606;
     doc.body.appendChild(canvas);
 
-    ctx.font = '11pt Impact'
+    ctx.font = '11pt Impact';
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
 
@@ -72,11 +72,13 @@ var Engine = (function(global) {
      * particularly setting the lastTime variable that is required for the
      * game loop.
      */
+    
     function init() {
         reset();
         lastTime = Date.now();
         main();
     }
+
 
     /* This function is called by main (our game loop) and itself calls all
      * of the functions which may need to update entity's data. Based on how
@@ -88,18 +90,74 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        updateEntities(dt);
-        checkCollisions();
-        updateGameActions();
+        handleActions();
+
+        switch(game.mode){
+            case state.running :
+                updateEntities(dt);
+                checkCollisions();
+                //updateGameActions();
+            break;
+            case state.paused :
+                //allBubbles.push(new TextBubble('paused'));
+            break;
+            case state.gameover :
+                //allBubbles.push(new TextBubble('game over'));
+                console.log('game over');
+            break;
+        }
+        
+       
+
+
+       /* if(inputEngine.actions.pause) {
+
+
+        }
+        else {
+            updateEntities(dt);
+            checkCollisions();
+            updateGameActions();
+        }*/
         //updateSpeakers();
+    }
+
+    function handleActions() {
+        if(inputEngine.actions.pause) {
+            console.log('ha' + inputEngine.actions.pause + 'gm:'+ game.mode);
+            if(game.mode === state.running) {
+                game.mode = state.paused;
+                allBubbles.push(new TextBubble('paused'));
+            }
+            else {
+                game.mode = state.running;
+                allBubbles.pop();
+            }
+            inputEngine.actions.pause = false;
+            console.log('ha' + inputEngine.actions.pause +'gm:'+ game.mode);
+        }
+
+        if(inputEngine.actions['space-bar'] && game.mode === state.gameover) {
+            inputEngine.actions['space-bar'] = false;
+            allBubbles.pop();
+            reset();
+            game.mode = state.running;
+        }
+
+         //   console.log('ha' + inputEngine.actions.pause);
+         //   game.mode = game.mode === state.paused state.paused;
+         //   inputEngine.actions.pause = false;
+         //   console.log('ha' + inputEngine.actions.pause);
+        //}
     }
 
     function updateGameActions () {
         updateSpeech();
     }
 
+
     function updateSpeech() {
-        if(inputEngine.actions['pause']) {
+        if(inputEngine.actions.pause) {
             player.speak('my own spik');
         }
     }
@@ -116,7 +174,18 @@ var Engine = (function(global) {
                 (loc_player.y < loc_enemy.y + enemy.height) &&
                 (loc_enemy.y < loc_player.y + player.height)) {
                 // Collision detected
-                //console.log('Collision detected');
+                    if(player.lifes === 0) {
+                        allBubbles.push(new TextBubble('game over'));
+                        //bubble.setText('game over');
+                        //inputEngine.actions.freeze = true;
+                        game.mode = state.gameover;
+                    }
+                    else {
+                        player.lifes--;
+                        console.log('lifes='+ player.lifes);
+                        player.x = 200;
+                        player.y = 300;
+                    }
             }                
         });
         
@@ -136,9 +205,6 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
         player.update(dt);
-    
-        //bubble.update();
-            //bubble.setup(player, 'why stop');        
     }
 
     /* This function initially draws the "game level", it will then call
@@ -195,8 +261,14 @@ var Engine = (function(global) {
             enemy.render();
         });
 
+        allBubbles.forEach(function(bubble) {
+            bubble.render();
+        });
+
         player.render();
         
+        //if(inputEngine.actions.pause)
+        //    bubble.render();
         //ctx.globalAlpha = 0.5;
         //ctx.globalAlpha = 1.0;
     }
@@ -206,7 +278,13 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        // noop
+        player.x = 200;
+        player.y = 300;
+        player.lifes = 3;
+    }
+
+    function gameover() {
+        inputEngine.actions.freeze = true;
     }
 
     /* Go ahead and load all of the images we know we're going to need to
