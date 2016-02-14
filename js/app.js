@@ -2,6 +2,12 @@ var Entity = function (x, y, sprite) {
     this.x = x;
     this.y = y;
     this.sprite = sprite;
+
+    this.speech = {};
+    this.speech['startTime'];
+    this.speech['state'] = 0;
+    this.speech['show'] = false;
+    this.speech['words'] = 'nothing to say';
 };
 
 // Update the enemy's position, required method for game
@@ -17,6 +23,7 @@ Entity.prototype.update = function(dt) {
 Entity.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
+
 
 var pInputEngine = function() {
     this.bindings = {};
@@ -40,6 +47,9 @@ pInputEngine.prototype.bindKey = function(key, action) {
     this.bindings[key] = action;
 };
 
+
+
+
 // Player to control
 var Player = function(x, y) {
     Entity.call(this, x, y, 'images/char-boy.png');
@@ -54,17 +64,52 @@ var Player = function(x, y) {
     //snd.play();
 };
 
-
 Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Player;
 
-Player.prototype.hitbox = function() {
+Player.prototype.update = function(dt) {
+    if(!inputEngine.actions['pause']){
+        if(inputEngine.actions['move-up']) this.y -= (100 * dt);
+        if(inputEngine.actions['move-down']) this.y += (100 * dt);
+        if(inputEngine.actions['move-left']) this.x -= (100 * dt);
+        if(inputEngine.actions['move-right']) this.x += (100 * dt);
+    }
+
+    if(this.speech['show']) {
+        console.log('test speech show');
+        //console.log('time:' + Date.now() - this.speech['startTime'])
+        if(Date.now() - this.speech['startTime'] > 3000)
+            this.speech['show'] = false;
+    };
+};
+
+Player.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+    if(this.speech['show']){
+        ctx.fillText(this.speech['words'], this.x + 40, this.y +70);
+        ctx.strokeText(this.speech['words'], this.x + 40, this.y +70);        
+    }
+}
+
+Player.prototype.centerLoc = function() {
+    //TODO: Remove whitespace in pictures, or find some other solution!
     // modified location of player due to whitespace in image
     var loc = {x:0, y:0};
     loc.x = this.x + 14;
     loc.y = this.y + 46;
     return loc;
 };
+
+Player.prototype.speak = function(words) {
+    if(this.speech['state'] == 0){
+        this.speech['words'] = words;
+        this.speech['show'] = true;
+        this.speech['startTime'] = Date.now();
+        this.speech['state'] = 1;
+        console.log('speak funk state=' + this.speech['state']);
+    }
+    
+}
 
 // Enemies our player must avoid
 var Enemy = function(x, y) {
@@ -83,19 +128,10 @@ var Enemy = function(x, y) {
     this.type = 'enemy';
 };
 
-
-
-Player.prototype.update = function(dt) {
-    if(inputEngine.actions['move-up']) this.y -= (100 * dt);
-    if(inputEngine.actions['move-down']) this.y += (100 * dt);
-    if(inputEngine.actions['move-left']) this.x -= (100 * dt);
-    if(inputEngine.actions['move-right']) this.x += (100 * dt);
-};
-
 Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
 
-Enemy.prototype.hitbox = function () {
+Enemy.prototype.centerLoc = function () {
     //TODO: Remove whitespace in pictures, or find some other solution!
     // modified location of enemy due to whitespace in image
     var loc = {x:0, y:0};
@@ -104,14 +140,7 @@ Enemy.prototype.hitbox = function () {
     return loc;
 };
 
-Player.prototype.hitbox = function() {
-    //TODO: Remove whitespace in pictures, or find some other solution!
-    // modified location of player due to whitespace in image
-    var loc = {x:0, y:0};
-    loc.x = this.x + 14;
-    loc.y = this.y + 46;
-    return loc;
-};
+
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
@@ -149,6 +178,7 @@ var onKeyDown = function (event) {
     }
     
 };
+
 
 document.addEventListener('keyup', onKeyUp);
 document.addEventListener('keydown', onKeyDown);

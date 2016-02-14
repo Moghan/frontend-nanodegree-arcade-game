@@ -29,6 +29,15 @@ var Engine = (function(global) {
     canvas.height = 606;
     doc.body.appendChild(canvas);
 
+    ctx.font = '11pt Impact'
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+
+    //gameStates = {};
+    //gameStates['paused'] = false;
+
+
+
     /* This function serves as the kickoff point for the game loop itself
      * and handles properly calling the update and render methods.
      */
@@ -79,22 +88,33 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        if( !inputEngine.actions['pause']) {
-            updateEntities(dt);
-            checkCollisions();
-        }
-        
+        updateEntities(dt);
+        checkCollisions();
+        updateGameActions();
+        //updateSpeakers();
     }
+
+    function updateGameActions () {
+        updateSpeech();
+    }
+
+    function updateSpeech() {
+        if(inputEngine.actions['pause']) {
+            player.speak('my own spik');
+        }
+    }
+    
+
 
     function checkCollisions() {
         // Axis-Aligned Bounding Box
-        box_player = player.hitbox();
+        loc_player = player.centerLoc();
         allEnemies.forEach(function(enemy) {
-            box_enemy = enemy.hitbox();
-            if ((box_player.x < box_enemy.x + enemy.width) && 
-                (box_enemy.x < box_player.x + player.width) &&
-                (box_player.y < box_enemy.y + enemy.height) &&
-                (box_enemy.y < box_player.y + player.height)) {
+            loc_enemy = enemy.centerLoc();
+            if ((loc_player.x < loc_enemy.x + enemy.width) && 
+                (loc_enemy.x < loc_player.x + player.width) &&
+                (loc_player.y < loc_enemy.y + enemy.height) &&
+                (loc_enemy.y < loc_player.y + player.height)) {
                 // Collision detected
                 //console.log('Collision detected');
             }                
@@ -116,6 +136,9 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
         player.update(dt);
+    
+        //bubble.update();
+            //bubble.setup(player, 'why stop');        
     }
 
     /* This function initially draws the "game level", it will then call
@@ -173,6 +196,9 @@ var Engine = (function(global) {
         });
 
         player.render();
+        
+        //ctx.globalAlpha = 0.5;
+        //ctx.globalAlpha = 1.0;
     }
 
     /* This function does nothing but it could have been a good place to
@@ -192,7 +218,9 @@ var Engine = (function(global) {
         'images/water-block.png',
         'images/grass-block.png',
         'images/enemy-bug.png',
-        'images/char-boy.png'
+        'images/char-boy.png',
+        'images/Heart.png', 
+        'images/bubble.png'
     ]);
     Resources.onReady(init);
 
