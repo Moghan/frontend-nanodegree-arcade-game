@@ -2,13 +2,16 @@ var State = function() {
     this.running = 'running';
     this.paused = 'paused';
     this.gameover = 'gameover';
+    this.newLevel = 'new level';
 };
 var state = new State();
 
 var Game = function() {
-    this.mode = state.running;
+    this.mode = state.newLevel;
     this.level = 0;
-}
+    this.timeStamp = 0;
+    this.isChangingLevel = true;
+};
 
 var game = new Game();
 
@@ -17,11 +20,14 @@ var Entity = function (x, y, sprite) {
     this.y = y;
     this.sprite = sprite;
 
-    this.speech = {};
-    this.speech.startTime ='';
-    this.speech.state = 0;
-    this.speech.show = false;
-    this.speech.words = 'nothing to say';
+    //this.speech = {};
+    //this.speech.startTime ='';
+    //this.speech.state = 0;
+    //this.speech.show = false;
+    //this.speech.words = 'nothing to say';
+
+    this.isCollision = false;
+    this.collisionTime = 0;
 };
 
 // Update the enemy's position, required method for game
@@ -52,26 +58,49 @@ var InputEngine = function() {
     this.bindKey(65, 'move-left');
     this.bindKey(68, 'move-right');
     this.bindKey(80, 'pause');
-    this.bindKey(32, 'space-bar') 
+    this.bindKey(32, 'space-bar'); 
 };
 
 InputEngine.prototype.bindKey = function(key, action) {
     this.bindings[key] = action;
 };
 
+var ImagePlayer = function() {
+    this.sprite = 'images/char-boy.png';
+    this.width = 60;
+    this.height = 85;
+    this.offsetLeft = 20;
+    this.offsetTop = 65;
+    this.offsetRight = 20;
+    this.offsetBottom = 35;
+    this.width = 60;
+    this.height = 70;
 
+};
+
+var ImageEnemy = function() {
+    this.sprite = 'images/enemy-bug.png';
+    this.width = 91;
+    this.height = 62;
+    this.offsetLeft = 5;
+    this.offsetTop = 80;
+}
 
 
 // Player to control
 var Player = function(x, y) {
-    Entity.call(this, x, y, 'images/char-boy.png');
+    this.image = new ImagePlayer();
+    //Entity.call(this, x, y, 'images/char-boy.png');
+    Entity.call(this, x, y, this.image.sprite);
     
     this.width = 60;
-    this.height = 85;
+    this.height = 70;
 
     this.type = 'player';
     this.lifes = 3;
     this.speed = 170;
+    //this.isCollision = false;
+    //this.collisionTime;
 
 
 // Sound test
@@ -81,6 +110,11 @@ var Player = function(x, y) {
 
 Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Player;
+
+Player.prototype.resetLocation = function() {
+    this.x = 200;
+    this.y = 400;
+};
 
 var TextBubble = function(text) {
     Entity.call(this, 300, 300, 'images/bubble.png');
@@ -101,39 +135,39 @@ TextBubble.prototype.render = function() {
 };
 
 Player.prototype.update = function(dt) {
-    if(!inputEngine.actions.pause){
+    if(!this.isCollision){
         if(inputEngine.actions['move-up']) this.y -= (this.speed * dt);
         if(inputEngine.actions['move-down']) this.y += (this.speed * dt);
         if(inputEngine.actions['move-left']) this.x -= (this.speed * dt);
         if(inputEngine.actions['move-right']) this.x += (this.speed * dt);
     }
-
+   /*
     if(this.speech.show) {
         console.log('test speech show');
         //console.log('time:' + Date.now() - this.speech['startTime'])
         if(Date.now() - this.speech.startTime > 3000)
             this.speech.show = false;
-    }
+    }*/
 };
 
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-    if(this.speech.show){
+    /*if(this.speech.show){
         ctx.fillText(this.speech.words, this.x + 40, this.y +70);
         ctx.strokeText(this.speech.words, this.x + 40, this.y +70);        
-    }
+    }*/
 };
 
-Player.prototype.centerLoc = function() {
+Player.prototype.location = function() {
     //TODO: Remove whitespace in pictures, or find some other solution!
     // modified location of player due to whitespace in image
     var loc = {x:0, y:0};
-    loc.x = this.x + 14;
-    loc.y = this.y + 56;
+    loc.x = this.x + this.image.offsetLeft;
+    loc.y = this.y + this.image.offsetTop;
     return loc;
 };
 
-Player.prototype.speak = function(words) {
+/*Player.prototype.speak = function(words) {
     if(this.speech.state === 0){
         this.speech.words = words;
         this.speech.show = true;
@@ -142,6 +176,13 @@ Player.prototype.speak = function(words) {
         console.log('speak funk state=' + this.speech.state);
     }
     
+};*/
+
+var MapData = function() {
+    this.boundaryLeft = 5;
+    this.boundaryTop = 60;
+    this.boundaryBottom = 560;
+    this.boundaryRight = 500;
 };
 
 // Enemies our player must avoid
@@ -151,54 +192,59 @@ var Enemy = function(x, y) {
 
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
-    
-    sprite = 'images/enemy-bug.png';
-    Entity.call(this, x, y, sprite);
+    this.image = new ImageEnemy();
+    //sprite = 'images/enemy-bug.png';
+    Entity.call(this, x, y, this.image.sprite);
 
     this.width = 91;
     this.height = 62;
 
     this.type = 'enemy';
-    this.baseSpeed = 100;
-    this.randSpeed = 50;
+    this.speedRandomizer = 0;
+    this.baseSpeed = 0;
+    this.randSpeed = 0;
 };
 
 Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
 
-Enemy.prototype.centerLoc = function () {
+Enemy.prototype.location = function () {
     //TODO: Remove whitespace in pictures, or find some other solution!
     // modified location of enemy due to whitespace in image
     var loc = {x:0, y:0};
-    loc.x = this.x + 0;
-    loc.y = this.y + 75;
+    loc.x = this.x + this.image.offsetLeft;
+    loc.y = this.y + this.image.offsetTop;
     return loc;
 };
 
 Enemy.prototype.update = function(dt) {
-    if(this.x > 600) {
-        this.x = -100;
-        this.randSpeed =  Math.floor(Math.random() * 400);  
+    if(!this.isCollision) {
+        if(this.x > 600) {
+            this.x = -100;
+            this.randSpeed =  Math.floor(Math.random() * this.speedRandomizer);  
+        }
+        this.x += (this.baseSpeed + this.randSpeed) * dt;
     }
-    this.x += (this.baseSpeed + this.randSpeed) * dt;
-}
+};
 
 
+var map = new MapData();
+//var levels = new Levels();
 
+console.log('new map:' +map.boundaryRight);
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
-var e1 = new Enemy(150, 150);
-var e2 = new Enemy(300, 50);
-var b1 = new TextBubble('hej hå');
-var allEnemies = [e1,e2];
+//var e1 = new Enemy(1550, 150);
+//var e2 = new Enemy(300, 50);
+//var b1 = new TextBubble('hej hå');
+//var allEnemies = [e1,e2];
+var allEnemies = [];
 var allBubbles = [];
 // Place the player object in a variable called player
 var player = new Player(200,300);
-console.log('x' + player.x +':sprite = ' + player.sprite);
+//console.log('x' + player.x +':sprite = ' + player.sprite);
 
 inputEngine = new InputEngine();
-
-
 
 var onKeyUp = function (event) {
     if(inputEngine.bindings[event.keyCode] === 'pause')
@@ -223,5 +269,66 @@ document.addEventListener('keyup', onKeyUp);
 document.addEventListener('keydown', onKeyDown);
 
 
+//var d = document.getElementById('canvas');
+
+  //  d.addEventListener('touchstart', handleTouchStart, false);
+  //  d.addEventListener('touchmove', handleTouchMove, false);        
+//document.getElementsByClassName('canvas').addEventListener('touchmove', handleTouchMove, false);
+
+var xDown = null;                                                        
+var yDown = null;                                                        
+
+function handleTouchStart(evt) {   
+    alert('sdfasdf');
+
+
+    xDown = evt.touches[0].clientX;                                      
+    yDown = evt.touches[0].clientY;                                      
+}                                            
+
+function handleTouchMove(evt) {
+    if ( ! xDown || ! yDown ) {
+        return;
+    }
+    
+    var xUp = evt.touches[0].clientX;                                    
+    var yUp = evt.touches[0].clientY;
+
+    var xDiff = xDown - xUp;
+    var yDiff = yDown - yUp;
+
+    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+        if ( xDiff > 0 ) {            
+            /* left swipe */ 
+            inputEngine.actions['move-up'] = false;
+            inputEngine.actions['move-down'] = false;
+            inputEngine.actions['move-left'] = true;
+            inputEngine.actions['move-right'] = false;
+
+        } else {
+            /* right swipe */
+            inputEngine.actions['move-up'] = false;
+            inputEngine.actions['move-down'] = false;
+            inputEngine.actions['move-left'] = false;
+            inputEngine.actions['move-right'] = true;        }                       
+    } else {
+        if ( yDiff > 0 ) {
+            /* up swipe */ 
+            inputEngine.actions['move-up'] = true;
+            inputEngine.actions['move-down'] = false;
+            inputEngine.actions['move-left'] = false;
+            inputEngine.actions['move-right'] = false;
+        } else { 
+            /* down swipe */
+            inputEngine.actions['move-up'] = false;
+            inputEngine.actions['move-down'] = true;
+            inputEngine.actions['move-left'] = false;
+            inputEngine.actions['move-right'] = false;
+        }                                                                 
+    }
+    /* reset values */
+    xDown = null;
+    yDown = null;                                             
+}
 
 

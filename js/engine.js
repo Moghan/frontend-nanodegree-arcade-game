@@ -25,6 +25,10 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
+    canvas.setAttribute('id', 'canvas');
+    canvas.addEventListener('touchstart', handleTouchStart, false);
+    canvas.addEventListener('touchmove', handleTouchMove, false);
+
     canvas.width = 505;
     canvas.height = 606;
     doc.body.appendChild(canvas);
@@ -74,9 +78,33 @@ var Engine = (function(global) {
      */
     
     function init() {
-        reset();
+        //allBubbles.push(new TextBubble(Levels[game.level].levelMessage));
+        //initNextLevel();
+        //game.timeStamp = Date.now() + 1500;
+        //reset();
         lastTime = Date.now();
         main();
+    }
+
+    function initNextLevel() {
+        game.level++;
+        allBubbles.push(new TextBubble(Levels[game.level].levelMessage));
+        game.timeStamp = Date.now() + 500;
+        
+    }
+
+    function startNextLevel() {
+        console.log('startNextLevel');
+        player.resetLocation();
+        allEnemies = [];
+        var currLevel = Levels[game.level];
+        //var enemies;
+        for (var enemies = 0 ; enemies < currLevel.numberOfEnemies ; enemies++) {
+            var e = new Enemy(1000, (50 + (100*enemies)));
+            e.baseSpeed = currLevel.enemySpeed;
+            e.speedRandomizer = currLevel.enemySpeedRandomizer;
+            allEnemies.push(e);
+        }        
     }
 
 
@@ -90,68 +118,58 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        handleActions();
-
         switch(game.mode){
             case state.running :
                 updateEntities(dt);
                 checkCollisions();
-                //updateGameActions();
+                isWaterReached();
+                if(inputEngine.actions.pause) {
+                    game.mode = state.paused;
+                    allBubbles.push(new TextBubble('paused'));
+                    inputEngine.actions.pause = false;
+                }
             break;
             case state.paused :
-                //allBubbles.push(new TextBubble('paused'));
+                if(inputEngine.actions.pause) {
+                    game.mode = state.running;
+                    allBubbles.pop();
+                    inputEngine.actions.pause = false;                    
+                }
             break;
             case state.gameover :
-                //allBubbles.push(new TextBubble('game over'));
-                console.log('game over');
+                if(inputEngine.actions['space-bar']) {
+                    inputEngine.actions['space-bar'] = false;
+                    allBubbles.pop();
+                    reset();
+                    player.isCollision = false;
+                }
+            break;
+            case state.newLevel :
+                if(game.isChangingLevel) {
+                    initNextLevel();
+                    game.isChangingLevel = false;
+                }
+                if (game.timeStamp + 1000 < Date.now()) {
+                    allBubbles.pop();
+                    startNextLevel();
+                    game.mode = state.running;
+                }
             break;
         }
-        
-       
-
-
-       /* if(inputEngine.actions.pause) {
-
-
-        }
-        else {
-            updateEntities(dt);
-            checkCollisions();
-            updateGameActions();
-        }*/
-        //updateSpeakers();
     }
 
-    function handleActions() {
-        if(inputEngine.actions.pause) {
-            console.log('ha' + inputEngine.actions.pause + 'gm:'+ game.mode);
-            if(game.mode === state.running) {
-                game.mode = state.paused;
-                allBubbles.push(new TextBubble('paused'));
-            }
-            else {
-                game.mode = state.running;
-                allBubbles.pop();
-            }
-            inputEngine.actions.pause = false;
-            console.log('ha' + inputEngine.actions.pause +'gm:'+ game.mode);
+    function isWaterReached() {
+        if((player.y + player.image.offsetTop) < (map.boundaryTop + 5)){
+            game.mode = state.newLevel;
+            game.isChangingLevel = true;
+           // game.timeStamp = Date.now();
+           // allBubbles.push(new TextBubble(Levels[game.level].levelMessage));
+            return true;
         }
-
-        if(inputEngine.actions['space-bar'] && game.mode === state.gameover) {
-            inputEngine.actions['space-bar'] = false;
-            allBubbles.pop();
-            reset();
-            game.mode = state.running;
-        }
-
-         //   console.log('ha' + inputEngine.actions.pause);
-         //   game.mode = game.mode === state.paused state.paused;
-         //   inputEngine.actions.pause = false;
-         //   console.log('ha' + inputEngine.actions.pause);
-        //}
     }
 
-    function updateGameActions () {
+    
+    /*function updateGameActions () {
         updateSpeech();
     }
 
@@ -160,34 +178,54 @@ var Engine = (function(global) {
         if(inputEngine.actions.pause) {
             player.speak('my own spik');
         }
-    }
+    }*/
     
 
 
     function checkCollisions() {
         // Axis-Aligned Bounding Box
-        loc_player = player.centerLoc();
+        loc_player = player.location();
+
+        // TODO: this makes the function do more then check for collision !
+        checkBoundaries(loc_player);
+
         allEnemies.forEach(function(enemy) {
-            loc_enemy = enemy.centerLoc();
+            loc_enemy = enemy.location();
             if ((loc_player.x < loc_enemy.x + enemy.width) && 
                 (loc_enemy.x < loc_player.x + player.width) &&
                 (loc_player.y < loc_enemy.y + enemy.height) &&
                 (loc_enemy.y < loc_player.y + player.height)) {
                 // Collision detected
-                    if(player.lifes === 0) {
-                        allBubbles.push(new TextBubble('game over'));
-                        //bubble.setText('game over');
-                        //inputEngine.actions.freeze = true;
-                        game.mode = state.gameover;
-                    }
-                    else {
-                        player.lifes--;
-                        console.log('lifes='+ player.lifes);
-                        player.x = 200;
-                        player.y = 300;
-                    }
+                    //var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
+                    //snd.play();
+                    enemy.isCollision = true;
+                
+                    if(!player.isCollision) {
+                        if(player.lifes === 0) {
+                            allBubbles.push(new TextBubble('game over'));
+                            game.mode = state.gameover;
+                        }
+                        else player.lifes--;
+
+                        player.collisionTime = Date.now();
+                        player.isCollision = true;
+                    }                    
             }                
         });
+        if(player.isCollision && player.collisionTime + 500 < Date.now()) {
+            player.isCollision = false;
+            allEnemies.forEach(function(e) {e.isCollision = false;});
+            player.resetLocation();
+        }
+
+    }
+
+    function checkBoundaries(loc_player) {
+        console.log(loc_player.y + ":mb: " + map.boundaryTop);
+        if(player.x + player.image.offsetLeft < map.boundaryLeft) player.x = map.boundaryLeft - player.image.offsetLeft;
+        if(player.x + player.image.offsetLeft + player.image.width > map.boundaryRight) player.x = map.boundaryRight - player.image.offsetLeft - player.image.width;
+        if(player.y + player.image.offsetTop < map.boundaryTop) player.y = map.boundaryTop - player.image.offsetTop;
+        if(player.y + player.image.offsetTop + player.image.height > map.boundaryBottom) player.y = map.boundaryBottom - player.image.offsetTop - player.image.height;
         
     }
 
@@ -217,7 +255,7 @@ var Engine = (function(global) {
         /* This array holds the relative URL to the image used
          * for that particular row of the game level.
          */
-        var rowImages = [
+       /* var rowImages = [
                 'images/water-block.png',   // Top row is water
                 'images/stone-block.png',   // Row 1 of 3 of stone
                 'images/stone-block.png',   // Row 2 of 3 of stone
@@ -228,13 +266,17 @@ var Engine = (function(global) {
             numRows = 6,
             numCols = 5,
             row, col;
+            */
+            var currLevel = Levels[game.level];
+            var row, col;
+
 
         /* Loop through the number of rows and columns we've defined above
          * and, using the rowImages array, draw the correct image for that
          * portion of the "grid"
          */
-        for (row = 0; row < numRows; row++) {
-            for (col = 0; col < numCols; col++) {
+        for (row = 0; row < currLevel.numRows; row++) {
+            for (col = 0; col < currLevel.numCols; col++) {
                 /* The drawImage function of the canvas' context element
                  * requires 3 parameters: the image to draw, the x coordinate
                  * to start drawing and the y coordinate to start drawing.
@@ -242,7 +284,7 @@ var Engine = (function(global) {
                  * so that we get the benefits of caching these images, since
                  * we're using them over and over.
                  */
-                ctx.drawImage(Resources.get(rowImages[row]), col * 101, row * 83);
+                ctx.drawImage(Resources.get(currLevel.rowImages[row]), col * 101, row * 83);
             }
         }
 
@@ -279,13 +321,18 @@ var Engine = (function(global) {
      */
     function reset() {
         player.x = 200;
-        player.y = 300;
+        player.y = 400;
         player.lifes = 3;
+        game.level = 0;
+        game.mode = state.newLevel;
+        game.isChangingLevel = true;
+        //allEnemies.forEach(function(e){e.x = -100;});
     }
 
-    function gameover() {
+    /*function gameover() {
         inputEngine.actions.freeze = true;
-    }
+    }*/
+
 
     /* Go ahead and load all of the images we know we're going to need to
      * draw our game level. Then set init as the callback method, so that when
