@@ -1,3 +1,9 @@
+/* Data for different levels.
+ * The rowImages array should contain 7 items, and the items is
+ * w = water, s = stone and g = grass
+ * Make sure the player starts on grass. 
+*/
+
 var Levels = [{
 'nr' : -1, 
 'levelMessage' : 'This level info is for rendering the map before the game has started.',

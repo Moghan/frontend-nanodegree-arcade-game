@@ -130,7 +130,7 @@ var Engine = (function(global) {
                 
                 if(inputEngine.actions.pause) {
                     game.mode = state.paused;
-                    allBubbles.push(new TextBubble('paused'));
+                    allBubbles.push(new TextBubble('You have paused the game.\\nPress P to unpause.'));
                     inputEngine.actions.pause = false;
                 }
             break;
@@ -164,34 +164,26 @@ var Engine = (function(global) {
     }
 
     function isWaterReached() {
-        if((player.y + player.image.offsetTop) < (map.boundaryTop + 5)){
-            
+        if((player.y + player.image.offsetTop) < (map.boundaryTop + 5))            
             return true;
-        }
         else return false;
     }
 
     function checkCollisions() {
-        // Axis-Aligned Bounding Box
         loc_player = player.location();
-
-        // TODO: this makes the function do more then check for collision !
-        //checkBoundaries(loc_player);
-
+        
         allEnemies.forEach(function(enemy) {
             loc_enemy = enemy.location();
+            // Axis-Aligned Bounding Box
             if ((loc_player.x < loc_enemy.x + enemy.image.width) && 
                 (loc_enemy.x < loc_player.x + player.image.width) &&
                 (loc_player.y < loc_enemy.y + enemy.image.height) &&
                 (loc_enemy.y < loc_player.y + player.image.height)) {
-                // Collision detected
-                    //var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
-                    //snd.play();
                     enemy.isCollision = true;
                 
                     if(!player.isCollision) {
                         if(player.lifes === 0) {
-                            allBubbles.push(new TextBubble('game over'));
+                            allBubbles.push(new TextBubble('Game Over\\nPress Space to try again.'));
                             game.mode = state.gameover;
                         }
                         else player.lifes--;
@@ -206,12 +198,9 @@ var Engine = (function(global) {
             allEnemies.forEach(function(e) {e.isCollision = false;});
             player.resetLocation();
         }
-
     }
 
     
-
-
     /* This is called by the update function and loops through all of the
      * objects within your allEnemies array as defined in app.js and calls
      * their update() methods. It will then call the update function for your
@@ -233,31 +222,15 @@ var Engine = (function(global) {
      * they are just drawing the entire screen over and over.
      */
     function render() {
-        /* This array holds the relative URL to the image used
-         * for that particular row of the game level.
-         */
-
-            var numRows = 7,
-            numCols = 6,
-            row, col,            
-            currLevel = Levels[game.level];
-
-
-        /* Loop through the number of rows and columns we've defined above
-         * and, using the rowImages array, draw the correct image for that
-         * portion of the "grid"
-         */
+        var row, col,            
+        currLevel = Levels[game.level];
+        
         for (row = 0; row < map.numRows; row++) {
             for (col = 0; col < map.numCols; col++) {
-                /* The drawImage function of the canvas' context element
-                 * requires 3 parameters: the image to draw, the x coordinate
-                 * to start drawing and the y coordinate to start drawing.
-                 * We're using our Resources helpers to refer to our images
-                 * so that we get the benefits of caching these images, since
-                 * we're using them over and over.
+                 /* currLevel.rowImages is an array describing the background tiles for every row.
+                  * For example: the array for the first level is ['w', 's', 's', 's', 'g', 'g', 'g']
                  */
                  var rowImage;
-                 //console.log(currLevel.rowImages[row]);
                  switch(currLevel.rowImages[row]){
                     case 'w' : rowImage = 'images/water-block.png'; break;
                     case 's' : rowImage = 'images/stone-block.png'; break;
@@ -282,11 +255,11 @@ var Engine = (function(global) {
             enemy.render();
         });
 
+        player.render();
+        
         allBubbles.forEach(function(bubble) {
             bubble.render();
         });
-
-        player.render();
     }
 
     /* This function does nothing but it could have been a good place to

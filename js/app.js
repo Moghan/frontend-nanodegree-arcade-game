@@ -1,74 +1,3 @@
-var MapData = function() {
-    this.boundaryLeft = 5;
-    this.boundaryTop = 60;
-    this.boundaryBottom = 630;
-    this.boundaryRight = 600;
-    this.numRows = 7;
-    this.numCols =6;
-};
-
-var State = function() {
-    this.running = 'running';
-    this.paused = 'paused';
-    this.gameover = 'gameover';
-    this.newLevel = 'new level';
-    this.finished = 'finished';
-};
-
-
-var Game = function() {
-    this.mode = state.newLevel;
-    this.level = 0;
-    this.timeStamp = 0;
-    this.isChangingLevel = true;
-};
-
-var Entity = function (x, y, sprite) {
-    this.x = x;
-    this.y = y;
-    this.sprite = sprite;
-
-    
-
-    this.isCollision = false;
-    this.collisionTime = 0;
-};
-
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
-Entity.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-
-};
-
-// Draw the enemy on the screen, required method for game
-Entity.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-
-
-var InputEngine = function() {
-    this.bindings = {};
-    this.actions = {};
-
-// Setup actions
- //   this.actions.pause = false;
-
-// TODO: Option to customize inputkeys
-    this.bindKey(87, 'move-up');
-    this.bindKey(83, 'move-down');
-    this.bindKey(65, 'move-left');
-    this.bindKey(68, 'move-right');
-    this.bindKey(80, 'pause');
-    this.bindKey(32, 'space-bar'); 
-};
-
-InputEngine.prototype.bindKey = function(key, action) {
-    this.bindings[key] = action;
-};
-
 var ImagePlayer = function() {
     this.sprite = 'images/char-boy.png';
     this.width = 60;
@@ -90,25 +19,60 @@ var ImageEnemy = function() {
     this.offsetTop = 80;
 };
 
-
-var Player = function(x, y) {
-    this.image = new ImagePlayer();
-    Entity.call(this, x, y, this.image.sprite);
-    
-    this.type = 'player';
-    this.lifes = 3;
-    this.speed = 170;
-// Sound test
-    //var snd = new Audio('sounds/river_s-rikkisch-8138_hifi.mp3');
-    //snd.play();
+var MapData = function() {
+    this.boundaryLeft = 5;
+    this.boundaryTop = 60;
+    this.boundaryBottom = 630;
+    this.boundaryRight = 600;
+    this.numRows = 7;
+    this.numCols =6;
 };
 
-Player.prototype = Object.create(Entity.prototype);
-Player.prototype.constructor = Player;
+var State = function() {
+    this.running = 'running';
+    this.paused = 'paused';
+    this.gameover = 'gameover';
+    this.newLevel = 'new level';
+};
 
-Player.prototype.resetLocation = function() {
-    this.x = 200;
-    this.y = Levels[game.level].playerStartPosY;
+var Game = function() {
+    this.mode = state.newLevel;
+    this.level = 0;
+    this.timeStamp = 0;
+    this.isChangingLevel = true;
+};
+
+var InputEngine = function() {
+    this.bindings = {};
+    this.actions = {};
+
+// TODO: Option to customize inputkeys
+    this.bindKey(87, 'move-up');
+    this.bindKey(83, 'move-down');
+    this.bindKey(65, 'move-left');
+    this.bindKey(68, 'move-right');
+    this.bindKey(80, 'pause');
+    this.bindKey(32, 'space-bar'); 
+};
+
+InputEngine.prototype.bindKey = function(key, action) {
+    this.bindings[key] = action;
+};
+
+var Entity = function (x, y, sprite) {
+    this.x = x;
+    this.y = y;
+    this.sprite = sprite;
+
+    this.isCollision = false;
+    this.collisionTime = 0;
+};
+
+Entity.prototype.update = function(dt) {
+};
+
+Entity.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
 var TextBubble = function(text) {
@@ -119,10 +83,6 @@ var TextBubble = function(text) {
 TextBubble.prototype = Object.create(Entity.prototype);
 TextBubble.prototype.constructor = TextBubble;
 
-TextBubble.prototype.setText = function(text) {
-    this.text = text;
-};
-
 TextBubble.prototype.render = function() {
     var lines = this.text.split('\\n');
 
@@ -131,6 +91,25 @@ TextBubble.prototype.render = function() {
         ctx.fillText(lines[i], this.x + 10, this.y + 30 + (i*20));
         ctx.strokeText(lines[i], this.x + 10, this.y + 30+ (i*20));        
     }
+};
+
+
+
+var Player = function(x, y) {
+    this.image = new ImagePlayer();
+    Entity.call(this, x, y, this.image.sprite);
+    
+    this.type = 'player';
+    this.lifes = 3;
+    this.speed = 170;
+};
+
+Player.prototype = Object.create(Entity.prototype);
+Player.prototype.constructor = Player;
+
+Player.prototype.resetLocation = function() {
+    this.x = 200;
+    this.y = Levels[game.level].playerStartPosY;
 };
 
 Player.prototype.update = function(dt) {
@@ -150,20 +129,13 @@ Player.prototype.checkBoundaries = function() {
         if(this.y + this.image.offsetTop + this.image.height > map.boundaryBottom) this.y = map.boundaryBottom - this.image.offsetTop - this.image.height;
 };
 
-Player.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-
 Player.prototype.location = function() {
-    //TODO: Remove whitespace in pictures, or find some other solution!
-    // modified location of player due to whitespace in image
+    // Return modified location of player due to whitespace in image
     var loc = {x:0, y:0};
     loc.x = this.x + this.image.offsetLeft;
     loc.y = this.y + this.image.offsetTop;
     return loc;
 };
-
-
 
 // Enemies our player must avoid
 var Enemy = function(x, y) {
@@ -181,7 +153,6 @@ Enemy.prototype.constructor = Enemy;
 
 // Returns modified location of enemy due to whitespace in image
 Enemy.prototype.location = function () {
-    //TODO: Remove whitespace in pictures, or find some other solution!
     var loc = {x:0, y:0};
     loc.x = this.x + this.image.offsetLeft;
     loc.y = this.y + this.image.offsetTop;
@@ -218,14 +189,13 @@ Enemy.prototype.update = function(dt) {
 
 
 // Now instantiate your objects.
-
 var state = new State();
 var game = new Game();
 var map = new MapData();
 var inputEngine = new InputEngine();
-
 var allEnemies = [];
-//Bubbles are used to show messages. To use an array is not necessary as long only one bubble is used at the same time.
+
+//Bubbles are used to show messages. At the moment only one bubble at a time is used.
 var allBubbles = [];
 var player = new Player(200,350);
 
@@ -239,8 +209,6 @@ var onKeyUp = function (event) {
 };
 
 var onKeyDown = function (event) {
-    //console.log(event.keyCode);
-    //TODO: A better solution to filter out the keys not reacted to when pressed down.
     if(inputEngine.bindings[event.keyCode] === 'pause');
     else {
         inputEngine.actions[inputEngine.bindings[event.keyCode]] = true;
@@ -248,25 +216,19 @@ var onKeyDown = function (event) {
 };
 
 
-
+// ******************************************************************************************************
+// The code below is for playing the game on phone or tablet.
+// Its early beta at this point, but it does not interfere with user experiance when playing on computer.
+//
+// ******************************************************************************************************
 
 document.addEventListener('keyup', onKeyUp);
 document.addEventListener('keydown', onKeyDown);
-
-
-//var d = document.getElementById('canvas');
-
-  //  d.addEventListener('touchstart', handleTouchStart, false);
-  //  d.addEventListener('touchmove', handleTouchMove, false);        
-//document.getElementsByClassName('canvas').addEventListener('touchmove', handleTouchMove, false);
 
 var xDown = null;                                                        
 var yDown = null;                                                        
 
 function handleTouchStart(evt) {   
-    alert('sdfasdf');
-
-
     xDown = evt.touches[0].clientX;                                      
     yDown = evt.touches[0].clientY;                                      
 }                                            
