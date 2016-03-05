@@ -1,8 +1,9 @@
 /* Data for different levels.
  * The rowImages array should contain 7 items, and the items is
  * w = water, s = stone and g = grass
- * Make sure the player starts on grass. 
-*/
+ * Make sure the player starts on grass.
+ * In messages, '\\n' is identified by TextBubble as a linebreak.
+ */
 
 var Levels = [{
 'nr' : -1, 

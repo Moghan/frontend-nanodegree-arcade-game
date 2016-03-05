@@ -77,19 +77,18 @@ Entity.prototype.render = function() {
 
 var TextBubble = function(text) {
     Entity.call(this, 300, 300, 'images/bubble.png');
-    this.text = text;
+    this.lines = text.split('\\n');
+    this.numberOfLines = this.lines.length;
 };
 
 TextBubble.prototype = Object.create(Entity.prototype);
 TextBubble.prototype.constructor = TextBubble;
 
 TextBubble.prototype.render = function() {
-    var lines = this.text.split('\\n');
-
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-    for (var i = 0 ; i < lines.length ; i++) {
-        ctx.fillText(lines[i], this.x + 10, this.y + 30 + (i*20));
-        ctx.strokeText(lines[i], this.x + 10, this.y + 30+ (i*20));        
+    for (var i = 0 ; i < this.numberOfLines ; i++) {
+        ctx.fillText(this.lines[i], this.x + 10, this.y + 30 + (i*20));
+        ctx.strokeText(this.lines[i], this.x + 10, this.y + 30+ (i*20));        
     }
 };
 
@@ -275,7 +274,5 @@ function handleTouchMove(evt) {
     }
     /* reset values */
     xDown = null;
-    yDown = null;                                             
+    yDown = null;
 }
-
-
