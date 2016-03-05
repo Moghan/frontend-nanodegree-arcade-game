@@ -9,9 +9,11 @@ The project repo is available at https://github.com/Moghan/frontend-nanodegree-a
 
 Visit http://riots.se/frogger/ to play the game.
 
+The game was fun making :) To play... not so much.
+
 ## How to play
 
 Use 'w,a,s,d' to control the player. Use 'p' to pause and unpaus. Press 'space' when asked to.
 
-## Other comments
-The game was fun making :) To play... not so much.
+## License
+MIT
